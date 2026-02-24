@@ -24,5 +24,10 @@ func SetupRouter(db *config.Database) *gin.Engine {
 	productHandler := handler.NewProductHandler(productUsecase)
 	ProductRoutes(api, productHandler)
 
+	productImageRepo := repository.NewProductImageRepository(db)
+	productImageUsecase := usecase.NewProductImageUsecase(productImageRepo)
+	productImageHandler := handler.NewProductImageHandler(productImageUsecase)
+	ProductImageRoutes(api, productImageHandler)
+
 	return route
 }
