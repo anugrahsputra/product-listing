@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createProduct = `-- name: CreateProduct :one
@@ -59,16 +60,18 @@ func (q *Queries) DeleteProduct(ctx context.Context, id uuid.UUID) error {
 
 const getAllProducts = `-- name: GetAllProducts :many
 SELECT 
-    id,
-    name,
-    slug,
-    description,
-    category_id,
-    price,
-    created_at,
-    updated_at
-FROM products 
-ORDER BY created_at DESC
+    p.id,
+    p.name,
+    p.slug,
+    p.description,
+    p.category_id,
+    p.price,
+    p.created_at,
+    p.updated_at,
+    pi.url as primary_image_url
+FROM products p
+LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
+ORDER BY p.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
@@ -77,15 +80,27 @@ type GetAllProductsParams struct {
 	Offset int32
 }
 
-func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) ([]Product, error) {
+type GetAllProductsRow struct {
+	ID              uuid.UUID
+	Name            string
+	Slug            string
+	Description     string
+	CategoryID      uuid.UUID
+	Price           float64
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	PrimaryImageUrl pgtype.Text
+}
+
+func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) ([]GetAllProductsRow, error) {
 	rows, err := q.db.Query(ctx, getAllProducts, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Product
+	var items []GetAllProductsRow
 	for rows.Next() {
-		var i Product
+		var i GetAllProductsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -95,6 +110,7 @@ func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) 
 			&i.Price,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PrimaryImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -108,27 +124,41 @@ func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) 
 
 const getProductByCategory = `-- name: GetProductByCategory :many
 SELECT 
-    id,
-    name,
-    slug,
-    description,
-    category_id,
-    price,
-    created_at,
-    updated_at
-FROM products
-WHERE category_id = $1
+    p.id,
+    p.name,
+    p.slug,
+    p.description,
+    p.category_id,
+    p.price,
+    p.created_at,
+    p.updated_at,
+    pi.url as primary_image_url
+FROM products p
+LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
+WHERE p.category_id = $1
 `
 
-func (q *Queries) GetProductByCategory(ctx context.Context, categoryID uuid.UUID) ([]Product, error) {
+type GetProductByCategoryRow struct {
+	ID              uuid.UUID
+	Name            string
+	Slug            string
+	Description     string
+	CategoryID      uuid.UUID
+	Price           float64
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	PrimaryImageUrl pgtype.Text
+}
+
+func (q *Queries) GetProductByCategory(ctx context.Context, categoryID uuid.UUID) ([]GetProductByCategoryRow, error) {
 	rows, err := q.db.Query(ctx, getProductByCategory, categoryID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Product
+	var items []GetProductByCategoryRow
 	for rows.Next() {
-		var i Product
+		var i GetProductByCategoryRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -138,6 +168,7 @@ func (q *Queries) GetProductByCategory(ctx context.Context, categoryID uuid.UUID
 			&i.Price,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PrimaryImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -151,21 +182,35 @@ func (q *Queries) GetProductByCategory(ctx context.Context, categoryID uuid.UUID
 
 const getProductByID = `-- name: GetProductByID :one
 SELECT 
-    id,
-    name,
-    slug,
-    description,
-    category_id,
-    price,
-    created_at,
-    updated_at
-FROM products 
-WHERE id = $1
+    p.id,
+    p.name,
+    p.slug,
+    p.description,
+    p.category_id,
+    p.price,
+    p.created_at,
+    p.updated_at,
+    pi.url as primary_image_url
+FROM products p
+LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
+WHERE p.id = $1
 `
 
-func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, error) {
+type GetProductByIDRow struct {
+	ID              uuid.UUID
+	Name            string
+	Slug            string
+	Description     string
+	CategoryID      uuid.UUID
+	Price           float64
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	PrimaryImageUrl pgtype.Text
+}
+
+func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error) {
 	row := q.db.QueryRow(ctx, getProductByID, id)
-	var i Product
+	var i GetProductByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -175,6 +220,7 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 		&i.Price,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrimaryImageUrl,
 	)
 	return i, err
 }

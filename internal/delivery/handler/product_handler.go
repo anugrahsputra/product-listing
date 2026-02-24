@@ -206,12 +206,13 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 
 func toProductDTO(p *domain.Product) dto.ProductResp {
 	return dto.ProductResp{
-		ID:          p.ID.String(),
-		Name:        p.Name,
-		Slug:        p.Slug,
-		Description: p.Description,
-		CategoryID:  p.CategoryID.String(),
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
+		ID:              p.ID.String(),
+		Name:            p.Name,
+		Slug:            p.Slug,
+		Description:     p.Description,
+		CategoryID:      p.CategoryID.String(),
+		PrimaryImageURL: p.PrimaryImageURL,
+		CreatedAt:       p.CreatedAt,
+		UpdatedAt:       p.UpdatedAt,
 	}
 }

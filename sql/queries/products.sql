@@ -5,43 +5,49 @@ RETURNING id, name, slug, description, category_id, price, created_at, updated_a
 
 -- name: GetAllProducts :many
 SELECT 
-    id,
-    name,
-    slug,
-    description,
-    category_id,
-    price,
-    created_at,
-    updated_at
-FROM products 
-ORDER BY created_at DESC
+    p.id,
+    p.name,
+    p.slug,
+    p.description,
+    p.category_id,
+    p.price,
+    p.created_at,
+    p.updated_at,
+    pi.url as primary_image_url
+FROM products p
+LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
+ORDER BY p.created_at DESC
 LIMIT $1 OFFSET $2;
 
 -- name: GetProductByID :one
 SELECT 
-    id,
-    name,
-    slug,
-    description,
-    category_id,
-    price,
-    created_at,
-    updated_at
-FROM products 
-WHERE id = $1;
+    p.id,
+    p.name,
+    p.slug,
+    p.description,
+    p.category_id,
+    p.price,
+    p.created_at,
+    p.updated_at,
+    pi.url as primary_image_url
+FROM products p
+LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
+WHERE p.id = $1;
 
 -- name: GetProductByCategory :many
 SELECT 
-    id,
-    name,
-    slug,
-    description,
-    category_id,
-    price,
-    created_at,
-    updated_at
-FROM products
-WHERE category_id = $1;
+    p.id,
+    p.name,
+    p.slug,
+    p.description,
+    p.category_id,
+    p.price,
+    p.created_at,
+    p.updated_at,
+    pi.url as primary_image_url
+FROM products p
+LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
+WHERE p.category_id = $1;
 
 
 -- name: UpdateProduct :exec

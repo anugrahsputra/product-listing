@@ -3,13 +3,14 @@ package dto
 import "time"
 
 type ProductResp struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Slug        string    `json:"slug"`
-	Description string    `json:"Description"`
-	CategoryID  string    `json:"category_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	Slug            string    `json:"slug"`
+	Description     string    `json:"Description"`
+	CategoryID      string    `json:"category_id"`
+	PrimaryImageURL string    `json:"primary_image_url"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 type ProductReq struct {

@@ -8,14 +8,15 @@ import (
 )
 
 type Product struct {
-	ID          uuid.UUID
-	Name        string
-	Slug        string
-	Description string
-	CategoryID  uuid.UUID
-	Price       float64
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID              uuid.UUID
+	Name            string
+	Slug            string
+	Description     string
+	CategoryID      uuid.UUID
+	Price           float64
+	PrimaryImageURL string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type ProductInput struct {

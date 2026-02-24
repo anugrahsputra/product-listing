@@ -69,7 +69,7 @@ func (r *productRepository) FetchById(ctx context.Context, id uuid.UUID) (*domai
 		return nil, errors.New(err.Error())
 	}
 
-	result := toProductEntity(&product)
+	result := toProductEntityByID(&product)
 
 	return &result, nil
 }
@@ -82,7 +82,7 @@ func (r *productRepository) FetchByCategory(ctx context.Context, cID uuid.UUID) 
 
 	var result []domain.Product
 	for _, p := range products {
-		result = append(result, toProductEntity(&p))
+		result = append(result, toProductEntityByCategory(&p))
 	}
 
 	return result, nil
@@ -113,15 +113,44 @@ func (r *productRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func toProductEntity(p *db.Product) domain.Product {
+func toProductEntity(p *db.GetAllProductsRow) domain.Product {
 	return domain.Product{
-		ID:          p.ID,
-		Name:        p.Name,
-		Slug:        p.Slug,
-		Description: p.Description,
-		CategoryID:  p.CategoryID,
-		Price:       p.Price,
-		CreatedAt:   p.CreatedAt.Time,
-		UpdatedAt:   p.UpdatedAt.Time,
+		ID:              p.ID,
+		Name:            p.Name,
+		Slug:            p.Slug,
+		Description:     p.Description,
+		CategoryID:      p.CategoryID,
+		Price:           p.Price,
+		PrimaryImageURL: p.PrimaryImageUrl.String,
+		CreatedAt:       p.CreatedAt.Time,
+		UpdatedAt:       p.UpdatedAt.Time,
+	}
+}
+
+func toProductEntityByID(p *db.GetProductByIDRow) domain.Product {
+	return domain.Product{
+		ID:              p.ID,
+		Name:            p.Name,
+		Slug:            p.Slug,
+		Description:     p.Description,
+		CategoryID:      p.CategoryID,
+		Price:           p.Price,
+		PrimaryImageURL: p.PrimaryImageUrl.String,
+		CreatedAt:       p.CreatedAt.Time,
+		UpdatedAt:       p.UpdatedAt.Time,
+	}
+}
+
+func toProductEntityByCategory(p *db.GetProductByCategoryRow) domain.Product {
+	return domain.Product{
+		ID:              p.ID,
+		Name:            p.Name,
+		Slug:            p.Slug,
+		Description:     p.Description,
+		CategoryID:      p.CategoryID,
+		Price:           p.Price,
+		PrimaryImageURL: p.PrimaryImageUrl.String,
+		CreatedAt:       p.CreatedAt.Time,
+		UpdatedAt:       p.UpdatedAt.Time,
 	}
 }
