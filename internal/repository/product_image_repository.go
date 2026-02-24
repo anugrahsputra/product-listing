@@ -32,7 +32,7 @@ func (r *productImageRepository) Create(ctx context.Context, input domain.Produc
 		return nil, err
 	}
 
-	entity := domain.ToProductImageEntity(&pi)
+	entity := toProductImageEntity(&pi)
 	return &entity, nil
 }
 
@@ -44,7 +44,7 @@ func (r *productImageRepository) GetByProductID(ctx context.Context, productID u
 
 	var result []domain.ProductImage
 	for _, img := range images {
-		result = append(result, domain.ToProductImageEntity(&img))
+		result = append(result, toProductImageEntity(&img))
 	}
 	return result, nil
 }
@@ -59,4 +59,14 @@ func (r *productImageRepository) SetPrimary(ctx context.Context, productID uuid.
 		ID:        imageID,
 	}
 	return r.db.SetProductPrimaryImage(ctx, params)
+}
+
+func toProductImageEntity(pi *db.ProductImage) domain.ProductImage {
+	return domain.ProductImage{
+		ID:        pi.ID,
+		ProductID: pi.ProductID,
+		Url:       pi.Url,
+		IsPrimary: pi.IsPrimary.Bool,
+		CreatedAt: pi.CreatedAt.Time,
+	}
 }

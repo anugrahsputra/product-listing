@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"product-listing/internal/db"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,14 +26,4 @@ type ProductImageRepository interface {
 	GetByProductID(ctx context.Context, productID uuid.UUID) ([]ProductImage, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	SetPrimary(ctx context.Context, productID uuid.UUID, imageID uuid.UUID) error
-}
-
-func ToProductImageEntity(pi *db.ProductImage) ProductImage {
-	return ProductImage{
-		ID:        pi.ID,
-		ProductID: pi.ProductID,
-		Url:       pi.Url,
-		IsPrimary: pi.IsPrimary.Bool,
-		CreatedAt: pi.CreatedAt.Time,
-	}
 }

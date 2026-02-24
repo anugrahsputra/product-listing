@@ -1,12 +1,18 @@
 #!/bin/bash
 
 BASE_URL="http://localhost:8080/api"
+TS=$(date +%s)
 
-echo "--- Testing PRODUCT IMAGES Endpoints ---"
+echo "--- 1. Setup: Creating temporary category and product ---"
+curl -s -X POST "$BASE_URL/category" -H "Content-Type: application/json" -d "{\"name\": \"Img Test Cat $TS\", \"slug\": \"img-cat-$TS\"}" > /dev/null
+CAT_ID=$(curl -s "$BASE_URL/category/slug/img-cat-$TS" | jq -r '.data.id')
 
-# Get a product ID for testing
-PROD_ID=$(curl -s "$BASE_URL/products/?limit=1" | jq -r '.data[0].id')
+curl -s -X POST "$BASE_URL/products/" -H "Content-Type: application/json" -d "{\"name\": \"Img Test Prod $TS\", \"slug\": \"img-prod-$TS\", \"Description\": \"test\", \"category_id\": \"$CAT_ID\", \"price\": 1.0}" > /dev/null
+PROD_ID=$(curl -s "$BASE_URL/products/?limit=100" | jq -r ".data[] | select(.slug==\"img-prod-$TS\") | .id")
+
 echo "Using Product ID: $PROD_ID"
+
+echo "--- 2. Testing PRODUCT IMAGES Endpoints ---"
 
 # Add Image 1
 echo "POST /product-images (Image 1)..."
@@ -31,5 +37,9 @@ curl -s -X PUT "$BASE_URL/product-images/primary/$PROD_ID/$IMG2_ID" | jq -c
 # Delete Image
 echo "DELETE /product-images/:id (Deleting Image 1):"
 curl -s -X DELETE "$BASE_URL/product-images/$IMG1_ID" | jq -c
+
+echo "--- 3. Cleanup ---"
+curl -s -X DELETE "$BASE_URL/products/$PROD_ID" > /dev/null
+curl -s -X DELETE "$BASE_URL/category/$CAT_ID" > /dev/null
 
 echo "--- ALL IMAGE TESTS COMPLETED ---"
