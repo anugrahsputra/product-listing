@@ -22,10 +22,14 @@ type Product struct {
 	Name        string
 	Slug        string
 	Description string
-	CategoryID  uuid.UUID
 	Price       float64
 	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
+}
+
+type ProductCategory struct {
+	ProductID  uuid.UUID
+	CategoryID uuid.UUID
 }
 
 type ProductImage struct {

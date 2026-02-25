@@ -12,17 +12,41 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addProductCategory = `-- name: AddProductCategory :exec
+INSERT INTO product_categories (product_id, category_id)
+VALUES ($1, $2)
+`
+
+type AddProductCategoryParams struct {
+	ProductID  uuid.UUID
+	CategoryID uuid.UUID
+}
+
+func (q *Queries) AddProductCategory(ctx context.Context, arg AddProductCategoryParams) error {
+	_, err := q.db.Exec(ctx, addProductCategory, arg.ProductID, arg.CategoryID)
+	return err
+}
+
+const clearProductCategories = `-- name: ClearProductCategories :exec
+DELETE FROM product_categories
+WHERE product_id = $1
+`
+
+func (q *Queries) ClearProductCategories(ctx context.Context, productID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, clearProductCategories, productID)
+	return err
+}
+
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products(name, slug, description, category_id, price, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-RETURNING id, name, slug, description, category_id, price, created_at, updated_at
+INSERT INTO products(name, slug, description, price, created_at, updated_at)
+VALUES ($1, $2, $3, $4, NOW(), NOW())
+RETURNING id, name, slug, description, price, created_at, updated_at
 `
 
 type CreateProductParams struct {
 	Name        string
 	Slug        string
 	Description string
-	CategoryID  uuid.UUID
 	Price       float64
 }
 
@@ -31,7 +55,6 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		arg.Name,
 		arg.Slug,
 		arg.Description,
-		arg.CategoryID,
 		arg.Price,
 	)
 	var i Product
@@ -40,7 +63,6 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.Name,
 		&i.Slug,
 		&i.Description,
-		&i.CategoryID,
 		&i.Price,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -64,11 +86,16 @@ SELECT
     p.name,
     p.slug,
     p.description,
-    p.category_id,
     p.price,
     p.created_at,
     p.updated_at,
-    pi.url as primary_image_url
+    pi.url as primary_image_url,
+    (
+        SELECT json_agg(jsonb_build_object('id', c.id, 'name', c.name, 'slug', c.slug))
+        FROM product_categories pc
+        JOIN categories c ON c.id = pc.category_id
+        WHERE pc.product_id = p.id
+    )::json as categories
 FROM products p
 LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
 ORDER BY p.created_at DESC
@@ -85,11 +112,11 @@ type GetAllProductsRow struct {
 	Name            string
 	Slug            string
 	Description     string
-	CategoryID      uuid.UUID
 	Price           float64
 	CreatedAt       pgtype.Timestamp
 	UpdatedAt       pgtype.Timestamp
 	PrimaryImageUrl pgtype.Text
+	Categories      []byte
 }
 
 func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) ([]GetAllProductsRow, error) {
@@ -106,69 +133,11 @@ func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) 
 			&i.Name,
 			&i.Slug,
 			&i.Description,
-			&i.CategoryID,
 			&i.Price,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.PrimaryImageUrl,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getProductByCategory = `-- name: GetProductByCategory :many
-SELECT 
-    p.id,
-    p.name,
-    p.slug,
-    p.description,
-    p.category_id,
-    p.price,
-    p.created_at,
-    p.updated_at,
-    pi.url as primary_image_url
-FROM products p
-LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
-WHERE p.category_id = $1
-`
-
-type GetProductByCategoryRow struct {
-	ID              uuid.UUID
-	Name            string
-	Slug            string
-	Description     string
-	CategoryID      uuid.UUID
-	Price           float64
-	CreatedAt       pgtype.Timestamp
-	UpdatedAt       pgtype.Timestamp
-	PrimaryImageUrl pgtype.Text
-}
-
-func (q *Queries) GetProductByCategory(ctx context.Context, categoryID uuid.UUID) ([]GetProductByCategoryRow, error) {
-	rows, err := q.db.Query(ctx, getProductByCategory, categoryID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetProductByCategoryRow
-	for rows.Next() {
-		var i GetProductByCategoryRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Slug,
-			&i.Description,
-			&i.CategoryID,
-			&i.Price,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.PrimaryImageUrl,
+			&i.Categories,
 		); err != nil {
 			return nil, err
 		}
@@ -186,11 +155,16 @@ SELECT
     p.name,
     p.slug,
     p.description,
-    p.category_id,
     p.price,
     p.created_at,
     p.updated_at,
-    pi.url as primary_image_url
+    pi.url as primary_image_url,
+    (
+        SELECT json_agg(jsonb_build_object('id', c.id, 'name', c.name, 'slug', c.slug))
+        FROM product_categories pc
+        JOIN categories c ON c.id = pc.category_id
+        WHERE pc.product_id = p.id
+    )::json as categories
 FROM products p
 LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
 WHERE p.id = $1
@@ -201,11 +175,11 @@ type GetProductByIDRow struct {
 	Name            string
 	Slug            string
 	Description     string
-	CategoryID      uuid.UUID
 	Price           float64
 	CreatedAt       pgtype.Timestamp
 	UpdatedAt       pgtype.Timestamp
 	PrimaryImageUrl pgtype.Text
+	Categories      []byte
 }
 
 func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error) {
@@ -216,13 +190,77 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductB
 		&i.Name,
 		&i.Slug,
 		&i.Description,
-		&i.CategoryID,
 		&i.Price,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.PrimaryImageUrl,
+		&i.Categories,
 	)
 	return i, err
+}
+
+const getProductsByCategoryID = `-- name: GetProductsByCategoryID :many
+SELECT 
+    p.id,
+    p.name,
+    p.slug,
+    p.description,
+    p.price,
+    p.created_at,
+    p.updated_at,
+    pi.url as primary_image_url,
+    (
+        SELECT json_agg(jsonb_build_object('id', c.id, 'name', c.name, 'slug', c.slug))
+        FROM product_categories pc_all
+        JOIN categories c ON c.id = pc_all.category_id
+        WHERE pc_all.product_id = p.id
+    )::json as categories
+FROM products p
+JOIN product_categories pc ON p.id = pc.product_id
+LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = true
+WHERE pc.category_id = $1
+`
+
+type GetProductsByCategoryIDRow struct {
+	ID              uuid.UUID
+	Name            string
+	Slug            string
+	Description     string
+	Price           float64
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	PrimaryImageUrl pgtype.Text
+	Categories      []byte
+}
+
+func (q *Queries) GetProductsByCategoryID(ctx context.Context, categoryID uuid.UUID) ([]GetProductsByCategoryIDRow, error) {
+	rows, err := q.db.Query(ctx, getProductsByCategoryID, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProductsByCategoryIDRow
+	for rows.Next() {
+		var i GetProductsByCategoryIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.Description,
+			&i.Price,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.PrimaryImageUrl,
+			&i.Categories,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getProductsCount = `-- name: GetProductsCount :one
@@ -241,7 +279,7 @@ UPDATE products
 SET 
     name = COALESCE($2, name),
     description = COALESCE($3, description),
-    category_id = COALESCE($4, category_id),
+    price = COALESCE($4, price),
     updated_at = NOW()
 WHERE id = $1
 `
@@ -250,7 +288,7 @@ type UpdateProductParams struct {
 	ID          uuid.UUID
 	Name        string
 	Description string
-	CategoryID  uuid.UUID
+	Price       float64
 }
 
 func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) error {
@@ -258,7 +296,7 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) er
 		arg.ID,
 		arg.Name,
 		arg.Description,
-		arg.CategoryID,
+		arg.Price,
 	)
 	return err
 }

@@ -12,9 +12,9 @@ type Product struct {
 	Name            string
 	Slug            string
 	Description     string
-	CategoryID      uuid.UUID
 	Price           float64
 	PrimaryImageURL string
+	Categories      []Category
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
@@ -23,7 +23,7 @@ type ProductInput struct {
 	Name        string
 	Slug        string
 	Description string
-	CategoryID  uuid.UUID
+	CategoryIDs []uuid.UUID
 	Price       float64
 }
 
