@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:8080/api"
+BASE_URL="http://localhost:8081/api"
 TS=$(date +%s)
 
 echo "--- 1. Setup: Creating temporary category and product ---"
