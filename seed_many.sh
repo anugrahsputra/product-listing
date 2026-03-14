@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:8080/api"
+BASE_URL="http://localhost:8081/api"
 PREFIX=$(date +%s)
 
 echo "Creating 10 categories with prefix $PREFIX..."
@@ -35,4 +35,4 @@ done
 
 echo "--------------------------------"
 echo "Verification:"
-curl -s "http://localhost:8080/api/products/?limit=1" | jq '.data[0] | {name, categories}'
+curl -s "http://localhost:8081/api/products/?limit=1" | jq '.data[0] | {name, categories}'

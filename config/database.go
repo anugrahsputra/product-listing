@@ -16,6 +16,10 @@ type Database struct {
 }
 
 func NewDatabase(cfg *Config) (*Database, error) {
+	if err := ensureDatabaseExists(cfg); err != nil {
+		return nil, err
+	}
+
 	dsn := cfg.GetDSN()
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
@@ -34,6 +38,37 @@ func NewDatabase(cfg *Config) (*Database, error) {
 	dbLog.Info("Database connected successfully")
 	return &Database{Pool: pool}, nil
 }
+
+func ensureDatabaseExists(cfg *Config) error {
+	postgresDSN := fmt.Sprintf("postgresql://%s:%s@%s:%s/postgres?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort)
+
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, postgresDSN)
+	if err != nil {
+		return fmt.Errorf("failed to connect to postgres database: %w", err)
+	}
+	defer pool.Close()
+
+	var exists bool
+	query := "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)"
+	err = pool.QueryRow(ctx, query, cfg.DBName).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check if database exists: %w", err)
+	}
+
+	if !exists {
+		dbLog.Infof("Database %s does not exist, creating it...", cfg.DBName)
+		_, err = pool.Exec(ctx, fmt.Sprintf("CREATE DATABASE \"%s\"", cfg.DBName))
+		if err != nil {
+			return fmt.Errorf("failed to create database: %w", err)
+		}
+		dbLog.Infof("Database %s created successfully", cfg.DBName)
+	}
+
+	return nil
+}
+
 
 func (db *Database) InitSchema(schemaPath string) error {
 	schema, err := os.ReadFile(schemaPath)

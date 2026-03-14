@@ -31,7 +31,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	var categoryIDs []uuid.UUID
+	categoryIDs := make([]uuid.UUID, 0, len(req.CategoryIDs))
 	for _, id := range req.CategoryIDs {
 		uid, err := uuid.Parse(id)
 		if err != nil {
@@ -88,9 +88,9 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		return
 	}
 
-	var productResp []dto.ProductResp
+	productResp := make([]dto.ProductResp, 0, len(products))
 	for _, p := range products {
-		productResp = append(productResp, toProductDTO(&p))
+		productResp = append(productResp, dto.ToProductDTO(&p))
 	}
 	c.JSON(http.StatusOK, dto.PaginatedResponse{
 		Status:     http.StatusOK,
@@ -115,7 +115,7 @@ func (h *ProductHandler) GetProductById(c *gin.Context) {
 		return
 	}
 
-	result := toProductDTO(product)
+	result := dto.ToProductDTO(product)
 	c.JSON(http.StatusOK, dto.Response{
 		Status:  http.StatusOK,
 		Message: "Success get product",
@@ -136,9 +136,9 @@ func (h *ProductHandler) GetProductByCategory(c *gin.Context) {
 		return
 	}
 
-	var productResp []dto.ProductResp
+	productResp := make([]dto.ProductResp, 0, len(products))
 	for _, p := range products {
-		productResp = append(productResp, toProductDTO(&p))
+		productResp = append(productResp, dto.ToProductDTO(&p))
 	}
 
 	c.JSON(http.StatusOK, dto.Response{
@@ -161,7 +161,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	var categoryIDs []uuid.UUID
+	categoryIDs := make([]uuid.UUID, 0, len(req.CategoryIDs))
 	for _, catID := range req.CategoryIDs {
 		uid, err := uuid.Parse(catID)
 		if err != nil {
@@ -211,32 +211,4 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		Status:  http.StatusOK,
 		Message: "Success delete product",
 	})
-}
-
-func toProductDTO(p *domain.Product) dto.ProductResp {
-	return dto.ProductResp{
-		ID:              p.ID.String(),
-		Name:            p.Name,
-		Slug:            p.Slug,
-		Description:     p.Description,
-		Price:           p.Price,
-		PrimaryImageURL: p.PrimaryImageURL,
-		Categories:      toCategoryDTOs(p.Categories),
-		CreatedAt:       p.CreatedAt,
-		UpdatedAt:       p.UpdatedAt,
-	}
-}
-
-func toCategoryDTOs(cats []domain.Category) []dto.CategoryResp {
-	var resp []dto.CategoryResp
-	for _, c := range cats {
-		resp = append(resp, dto.CategoryResp{
-			ID:        c.ID.String(),
-			Name:      c.Name,
-			Slug:      c.Slug,
-			CreatedAt: c.CreatedAt,
-			UpdatedAt: c.UpdatedAt,
-		})
-	}
-	return resp
 }

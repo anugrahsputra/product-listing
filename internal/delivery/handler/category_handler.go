@@ -70,9 +70,10 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) {
 		return
 	}
 
-	var result []dto.CategoryResp
+	result := make([]dto.CategoryResp, 0, len(categories))
 	for _, c := range categories {
-		result = append(result, toCategoryDTO(&c))
+		item := dto.ToCategoryDTO(&c)
+		result = append(result, item)
 	}
 
 	c.JSON(http.StatusOK, dto.PaginatedResponse{
@@ -102,7 +103,7 @@ func (h *CategoryHandler) GetCategoryByID(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Response{
 		Status:  http.StatusOK,
 		Message: "Success get category",
-		Data:    toCategoryDTO(category),
+		Data:    dto.ToCategoryDTO(category),
 	})
 }
 
@@ -122,7 +123,7 @@ func (h *CategoryHandler) GetCategoryBySlug(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Response{
 		Status:  http.StatusOK,
 		Message: "Success get category",
-		Data:    toCategoryDTO(category),
+		Data:    dto.ToCategoryDTO(category),
 	})
 }
 
@@ -173,14 +174,4 @@ func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
 		Status:  http.StatusOK,
 		Message: "Category deleted",
 	})
-}
-
-func toCategoryDTO(c *domain.Category) dto.CategoryResp {
-	return dto.CategoryResp{
-		ID:        c.ID.String(),
-		Name:      c.Name,
-		Slug:      c.Slug,
-		CreatedAt: c.CreatedAt,
-		UpdatedAt: c.CreatedAt,
-	}
 }

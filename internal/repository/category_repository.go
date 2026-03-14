@@ -45,7 +45,7 @@ func (r *categoryRepository) Fetch(ctx context.Context, limit, offset int) ([]do
 		return nil, errors.New(err.Error())
 	}
 
-	var result []domain.Category
+	result := make([]domain.Category, 0, len(categories))
 	for _, c := range categories {
 		result = append(result, toCategoryEntity(&c))
 	}

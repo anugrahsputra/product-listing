@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	baseURL     = "http://localhost:8080/api"
+	baseURL     = "http://localhost:8081/api"
 	numRequests = 5000 // Slightly reduced for faster mentor feedback
 	concurrency = 30
 )

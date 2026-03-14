@@ -1,6 +1,9 @@
 package dto
 
-import "time"
+import (
+	"product-listing/internal/domain"
+	"time"
+)
 
 type CategoryResp struct {
 	ID        string    `json:"id"`
@@ -13,4 +16,14 @@ type CategoryResp struct {
 type CategoryReq struct {
 	Name string `json:"name"`
 	Slug string `json:"slug"`
+}
+
+func ToCategoryDTO(c *domain.Category) CategoryResp {
+	return CategoryResp{
+		ID:        c.ID.String(),
+		Name:      c.Name,
+		Slug:      c.Slug,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
 }

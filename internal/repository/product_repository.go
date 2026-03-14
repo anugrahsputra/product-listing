@@ -56,7 +56,7 @@ func (r *productRepository) Fetch(ctx context.Context, limit, offset int) ([]dom
 		return nil, errors.New(err.Error())
 	}
 
-	var result []domain.Product
+	result := make([]domain.Product, 0, len(products))
 	for _, p := range products {
 		result = append(result, toProductEntity(&p))
 	}
@@ -90,7 +90,7 @@ func (r *productRepository) FetchByCategory(ctx context.Context, cID uuid.UUID) 
 		return nil, errors.New(err.Error())
 	}
 
-	var result []domain.Product
+	result := make([]domain.Product, 0, len(products))
 	for _, p := range products {
 		result = append(result, toProductEntityByCategoryID(&p))
 	}

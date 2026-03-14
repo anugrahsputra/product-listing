@@ -42,7 +42,7 @@ func (r *productImageRepository) GetByProductID(ctx context.Context, productID u
 		return nil, err
 	}
 
-	var result []domain.ProductImage
+	result := make([]domain.ProductImage, 0, len(images))
 	for _, img := range images {
 		result = append(result, toProductImageEntity(&img))
 	}

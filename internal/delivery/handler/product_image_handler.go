@@ -55,7 +55,7 @@ func (h *ProductImageHandler) AddImage(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.Response{
 		Status:  http.StatusCreated,
 		Message: "Image added",
-		Data:    toProductImageDTO(img),
+		Data:    dto.ToProductImageDTO(img),
 	})
 }
 
@@ -70,9 +70,9 @@ func (h *ProductImageHandler) GetProductImages(c *gin.Context) {
 		return
 	}
 
-	var resp []dto.ProductImageResp
+	resp := make([]dto.ProductImageResp, 0, len(images))
 	for _, img := range images {
-		resp = append(resp, toProductImageDTO(&img))
+		resp = append(resp, dto.ToProductImageDTO(&img))
 	}
 
 	c.JSON(http.StatusOK, dto.Response{
@@ -114,14 +114,4 @@ func (h *ProductImageHandler) SetPrimary(c *gin.Context) {
 		Status:  http.StatusOK,
 		Message: "Primary image set",
 	})
-}
-
-func toProductImageDTO(img *domain.ProductImage) dto.ProductImageResp {
-	return dto.ProductImageResp{
-		ID:        img.ID.String(),
-		ProductID: img.ProductID.String(),
-		Url:       img.Url,
-		IsPrimary: img.IsPrimary,
-		CreatedAt: img.CreatedAt,
-	}
 }
